@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands, ui
 import asyncio
 import json
-from Utils.config import *
+from Utils.config import BOT_TOKEN, initConfig, initModLog, saveLog, saveModLog, saveConfig
 import time
 # Import essential modules and config data.
 
