@@ -8,7 +8,7 @@ async def config(cmd: discord.Interaction):
         return
 
     # Create message embed.
-    embed = discord.Embed(
+    embed1 = discord.Embed(
         title=f"Server Config | {cmd.guild.name}",
         description="Select a configuration type...",
         color=0x00ffff
@@ -20,6 +20,9 @@ async def config(cmd: discord.Interaction):
     permissions = ui.Button(label="Moderation Permissions", style=discord.ButtonStyle.blurple)
     
     async def permissionsCallback(permsCb: discord.Interaction):
+        if permsCb.user != cmd.user:
+            await permsCb.response.send_message("You are not allowed to use this.")
+            return
         muteRoles = configDb[str(permsCb.guild.id)]["permissions"]["timeout"]
         banRoles = configDb[str(permsCb.guild.id)]["permissions"]["ban"]
         kickRoles = configDb[str(permsCb.guild.id)]["permissions"]["kick"]
@@ -43,14 +46,28 @@ async def config(cmd: discord.Interaction):
         kickRoles = formatRoleList(kickRoles)
         modlogRoles = formatRoleList(modlogRoles)
 
-        embed = discord.Embed(
+        embed2 = discord.Embed(
             title="Server Config | Permissions",
             description=f"Timeout Members: {muteRoles}\nKick Members: {kickRoles}\nBan Members: {banRoles}\nView Modlogs: {modlogRoles}\n\nAdministrator roles automatically have all permissions.",
             color=0x00ffff
         )
-        await cmd.edit_original_response(embed=embed, view=None)
+
+        newView = ui.View(timeout=None)
+        goback = ui.Button(label="Back", style=discord.ButtonStyle.gray)
+
+        async def backCallback(backCb: discord.Interaction):
+            if backCb.user != permsCb.user:
+                await backCb.response.send_message("You are not allowed to use this.")
+                return
+            await cmd.edit_original_response(embed=embed1, view=basicView)
+            await backCb.response.defer(thinking=False)
+
+        goback.callback = backCallback
+        newView.add_item(goback)
+        await cmd.edit_original_response(embed=embed2, view=newView)
+        await permsCb.response.defer(thinking=False)
 
     permissions.callback = permissionsCallback
     basicView.add_item(permissions)
 
-    await cmd.response.send_message(embed=embed, view=basicView)
+    await cmd.response.send_message(embed=embed1, view=basicView)
